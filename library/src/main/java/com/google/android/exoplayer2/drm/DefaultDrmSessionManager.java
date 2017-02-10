@@ -35,6 +35,7 @@ import com.google.android.exoplayer2.drm.ExoMediaDrm.OnEventListener;
 import com.google.android.exoplayer2.drm.ExoMediaDrm.ProvisionRequest;
 import com.google.android.exoplayer2.extractor.mp4.PsshAtomUtil;
 import com.google.android.exoplayer2.util.Assertions;
+import com.google.android.exoplayer2.util.MimeTypes;
 import com.google.android.exoplayer2.util.Util;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -101,6 +102,11 @@ public class DefaultDrmSessionManager<T extends ExoMediaCrypto> implements DrmSe
   public static final int MODE_DOWNLOAD = 2;
   /** Releases an existing offline license. */
   public static final int MODE_RELEASE = 3;
+
+  /**
+   * The format to use when ClearKey encryption.
+   */
+  private static final String CENC_INIT_DATA_FORMAT = "cenc";
 
   private static final String TAG = "OfflineDrmSessionMngr";
 
@@ -335,6 +341,12 @@ public class DefaultDrmSessionManager<T extends ExoMediaCrypto> implements DrmSe
           // Extraction failed. schemeData isn't a Widevine PSSH atom, so leave it unchanged.
         } else {
           schemeInitData = psshData;
+        }
+      }
+      if (C.CENC_UUID.equals(uuid) && MimeTypes.VIDEO_MP4.equals(schemeMimeType)) {
+        // If "video/mp4" is not supported as CENC schema, change it to "cenc".
+        if (Util.SDK_INT < 19 || !MediaDrm.isCryptoSchemeSupported(uuid, MimeTypes.VIDEO_MP4)) {
+          schemeMimeType = CENC_INIT_DATA_FORMAT;
         }
       }
     }
